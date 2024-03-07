@@ -1,11 +1,9 @@
 import mapping.HandPockerMapping;
 import model.Card;
 import model.HandPocker;
+import model.Rank;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PockerHandsSolution {
 
@@ -28,58 +26,59 @@ public class PockerHandsSolution {
 
         return result;
     }
-    public static String compareHandPocker(HandPocker black, HandPocker white){
+    public  String compareHandPocker(HandPocker black, HandPocker white){
 
 
-        String blackRank = getRankForPlayer(black);
-        String whiteRank = getRankForPlayer(white);
+        Rank blackRank = getRankForPlayer(black);
+        Rank whiteRank = getRankForPlayer(white);
 
         return "";
     }
 
-    private static String getRankForPlayer(HandPocker player) {
+    private static Rank getRankForPlayer(HandPocker player) {
         //Straight flush: 5 cards of the same suit with consecutive values. Ranked by the highest card in the hand.
-        if (isStraightFlush(player.getCards()) ) {
-            return "Straight Flush";
+        if (isStraightFlush(player.getCards()).isExistence() ) {
+            return isStraightFlush(player.getCards());
         }
 
 
         //Four of a kind: 4 cards with the same value.
         // Ranked by the value of the 4 cards.
-        else if (isFourOfAKind(player.getCards()) ) {
-            return "Four of a Kind";
+        else if (isFourOfAKind(player.getCards()).isExistence() ) {
+            return isFourOfAKind(player.getCards());
+        }
+
+        //Full House: 3 cards of the same value, with the remaining 2 cards forming a pair.
+        // Ranked by the value of the 3 cards
+        else if (isFullHouse(player.getCards()).isExistence() ) {
+            return isFullHouse(player.getCards());
+        }
 
 
 
-            //Full House: 3 cards of the same value, with the remaining 2 cards forming a pair.
-            // Ranked by the value of the 3 cards
-        } else if (isFullHouse(player.getCards()) ) {
-            return "Full House";
-
-
-            //Flush: Hand contains 5 cards of the same suit.
-            // Hands which are both flushes are ranked using the rules for High model.Card.
-        } else if (isFlush(player.getCards()) ) {
-            return "Flush";
+        //Flush: Hand contains 5 cards of the same suit.
+        // Hands which are both flushes are ranked using the rules for High model.Card.
+        else if (isFlush(player.getCards()).isExistence()) {
+            return isFlush(player.getCards());
 
 
 
             //Straight: Hand contains 5 cards with consecutive values.
             // Hands which both contain a straight are ranked by their highest card.
-        } else if (isStraight(player.getCards()) ) {
-            return "Straight";
+        } else if (isStraight(player.getCards()).isExistence() ) {
+            return isStraight(player.getCards());
 
 
 
             //Three of a Kind: Three of the cards in the hand have the same value.
             // Hands which both contain three of a kind are ranked by the value of the 3 cards.
-        } else if (isThreeOfAKind(player.getCards()) ) {
-            return "Three of a Kind";
+        } else if (isThreeOfAKind(player.getCards()).isExistence() ) {
+            return isThreeOfAKind(player.getCards());
 
             //Two Pairs: The hand contains 2 different pairs. Hands which both contain 2 pairs are ranked by the value of their highest pair.
             // Hands with the same highest pair are ranked by the value of their other pair. If these values are the same the hands are ranked by the value of the remaining card.
-        } else if (isTwoPair(player.getCards()) ) {
-            return "Two Pair";
+        } else if (isTwoPair(player.getCards()).isExistence() ) {
+            return isTwoPair(player.getCards());
 
 
 
@@ -95,48 +94,87 @@ public class PockerHandsSolution {
         }
     }
 
-    private static boolean isStraightFlush(List<Card> cards) {
+    private static Rank isStraightFlush(List<Card> cards) {
         char suit = cards.get(0).getSuit();
         for (Card card : cards) {
             if (card.getSuit() != suit) {
-                return false;
+                return new Rank(false);
             }
         }
-        return true;
+        return new Rank(9, true,"Straight Flush", List.of(getHighCardResultsForValues(cards)));
     }
 
 
-    private static boolean isFourOfAKind(List<Card> cards) {
+    private static Rank isFourOfAKind(List<Card> cards) {
         Map<Character, Integer> rankCounts = getRankCounts(cards);
-        return rankCounts.containsValue(4);
+        if (rankCounts.containsValue(4)) {
+            Character value = getKey(rankCounts, 4 );
+            return new Rank(8, true, "Four of a Kind", List.of(value));
+        } else {
+            return new Rank(false);
+        }
+
+
     }
 
 
-    private static boolean isFullHouse(List<Card> cards) {
+    private static Rank isFullHouse(List<Card> cards) {
         Map<Character, Integer> rankCounts = getRankCounts(cards);
-        return rankCounts.containsValue(3) && rankCounts.containsValue(2);
+
+        if (rankCounts.containsValue(3) && rankCounts.containsValue(2)){
+            Character value = getKey(rankCounts, 3);
+            return new Rank(7, true, "Full House", List.of(value));
+        } else {
+            return new Rank(false);
+        }
+
+
     }
 
-    private static boolean isFlush(List<Card> cards) {
+    private static Rank isFlush(List<Card> cards) {
         char suit = cards.get(0).getSuit();
         for (Card card : cards) {
             if (card.getSuit() != suit) {
-                return false;
+                return new Rank(false);
             }
         }
-        return true;
+        return new Rank(6, true, "Flush", List.of(getHighCardResultsForValues(cards)));
+    }
+
+    private static Rank isStraight(List<Card> cards) {
+        for (int i = 0; i < cards.size() - 1; i++) {
+            if (cards.get(i).getValue() + 1 != cards.get(i + 1).getValue()) {
+                return new Rank(false);
+            }
+        }
+        return new Rank(5, true, "Straight", List.of(getHighCardResultsForValues(cards)));
     }
 
 
-    private static boolean isTwoPair(List<Card> cards) {
+    private static Rank isTwoPair(List<Card> cards) {
+
         Map<Character, Integer> rankCounts = getRankCounts(cards);
         int pairCount = 0;
+
+        List<Character> listOrdered = new ArrayList<>();
+        Character impairs = 0;
+
+
         for (int count : rankCounts.values()) {
             if (count == 2) {
                 pairCount++;
+                listOrdered.add(getKey(rankCounts , count));
+            } else {
+                impairs = getKey(rankCounts , count);
             }
         }
-        return pairCount == 2;
+        if (pairCount == 2) {
+            listOrdered.add(impairs);
+            return new Rank(4, true, "Two Pair", listOrdered);
+        } else {
+            return new Rank(false);
+        }
+
     }
 
     private static boolean isOnePair(List<Card> cards) {
@@ -144,41 +182,43 @@ public class PockerHandsSolution {
         return rankCounts.containsValue(2);
     }
 
-    private static boolean isStraight(List<Card> cards) {
-        for (int i = 0; i < cards.size() - 1; i++) {
-            if (cards.get(i).getValue() + 1 != cards.get(i + 1).getValue()) {
-                return false;
-            }
-        }
-        return true;
-    }
 
 
-
-    private static boolean isThreeOfAKind(List<Card> cards) {
+    private static Rank isThreeOfAKind(List<Card> cards) {
         Map<Character, Integer> rankCounts = getRankCounts(cards);
-        return rankCounts.containsValue(3);
+
+        if (rankCounts.containsValue(3)) {
+            Character value = getKey(rankCounts, 3);
+            return new Rank(4, true, "Three of a Kind", List.of(value));
+        } else {
+            return new Rank(false);
+        }
     }
 
-    private static Map<Character, Integer> getRankCounts(List<Card> hand) {
+    private static Map<Character, Integer> getRankCounts(List<Card> cards) {
         Map<Character, Integer> rankCounts = new HashMap<>();
-        for (Card card : hand) {
+        for (Card card : cards) {
             char value = card.getValue();
             rankCounts.put(value, rankCounts.getOrDefault(value, 0) + 1);
         }
         return rankCounts;
     }
 
-    static int getHighCardResultsForValues(HandPocker black, HandPocker white) {
-        int index = black.getCards().size() - 1;
-        while (index >= 0) {
-            if (black.getCards().get(index).getValue() > white.getCards().get(index).getValue()) {
-                black.getCards().get(index).getValue();
-            } else if (black.getCards().get(index).getValue() < white.getCards().get(index).getValue()) {
-                return white.getCards().get(index).getValue();
+    static char getHighCardResultsForValues(List<Card> cards) {
+        int index = cards.size() - 1;
+        return cards.get(index).getValue();
+    }
+
+    private static Character getKey(Map<Character, Integer> rankCounts , int searchValue) {
+        Character foundKey = null;
+
+        for (Map.Entry<Character, Integer> entry : rankCounts.entrySet()) {
+            if (entry.getValue().equals(searchValue)) {
+                foundKey = entry.getKey();
+                break;
             }
-            index--;
         }
-        return 0;
+
+        return foundKey;
     }
 }
